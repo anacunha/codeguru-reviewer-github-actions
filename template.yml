@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Resources to setup AmazonCodeGuru Reviewer with GitHub Actions.
+  Creates an OpenID Connect (OIDC) Identity Provider for GitHub, an Amazon S3
+  bucket to upload code and build artifacts for CodeGuru Reviewer, and an IAM
+  role with access to the S3 bucket and AmazonCodeGuruReviewerFullAccess that
+  can be assumed by GitHub's OIDC provider when running the CodeGuru GitHub
+  Action workflow on your GitHub repo.
+
+Parameters:
+  GitHubOrg:
+    Type: String
+    Description: GitHub user or organization.
+  GitHubRepo:
+    Type: String
+    Description: GitHub repo where CodeGuru Reviewer Action will run.
+  OIDCProviderArn:
+    Description: Arn for the GitHub OIDC Provider (optional).
+      If empty, an OIDC provider for GitHub will be created.
+      The GitHub OIDC Provider can only be created once per AWS account.
+    Default: ""
+    Type: String
+
+Conditions:
+  CreateOIDCProvider: !Equals
+    - !Ref OIDCProviderArn
+    - ""
+
+Resources:
+  CodeGuruReviewerS3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      BucketName: !Sub 'codeguru-reviewer-${GitHubOrg}-${GitHubRepo}'
+      AccessControl: Private
+
+  CodeGuruReviewerS3BucketAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: S3AccessPolicyForCodeGuruReviewer
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: AllowCodeGuruReviewerToAccessS3Bucket
+            Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:GetObject
+              - s3:ListBucket
+            Resource:
+              - !GetAtt CodeGuruReviewerS3Bucket.Arn
+              - !Sub ${CodeGuruReviewerS3Bucket.Arn}/*
+      Roles:
+        - !Ref GithubOidcRole
+
+  GithubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateOIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+
+  GithubOidcRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Role assumed by GitHub OIDC provider when running GitHub Action workflow on GitHub repo.
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRoleWithWebIdentity
+            Principal:
+              Federated: !If
+                - CreateOIDCProvider
+                - !Ref GithubOidcProvider
+                - !Ref OIDCProviderArn
+            Condition:
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubOrg}/${GitHubRepo}:*
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonCodeGuruReviewerFullAccess
+
+Outputs:
+  GithubOidcRole:
+    Value: !GetAtt GithubOidcRole.Arn
+    Description: ARN of the role used in your GitHub Actions workflow
+  CodeGuruReviewerS3Bucket:
+    Value: !Ref CodeGuruReviewerS3Bucket
+    Description: Name of the S3 bucket created for CodeGuru Reviewer
