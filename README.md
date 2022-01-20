@@ -2,13 +2,17 @@
 
 Follow these steps to integrate [Amazon CodeGuru Reviewer](https://docs.aws.amazon.com/codeguru/latest/reviewer-ug/welcome.html) with [GitHub Actions](https://docs.github.com/en/actions):
 
-## 1. Configure GitHub OpenID Connect (OIDC) in AWS
+## 1. Allow your GitHub Action Workflow to access resources in AWS
 
 Your [GitHub Action Workflow](https://docs.github.com/en/actions/learn-github-actions/understanding-github-actions#workflows) will need access to resources on your AWS account to create code reviews with CodeGuru Reviewer.
 
 The recommended way to allow your workflow to access resources on your AWS account is through *short-lived credentials* using [OpenID Connect (OIDC)](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect).
 
-To configure GitHub's OIDC provider in AWS, you can use [this CloudFormation template](template.yml). It will create an OIDC Identity Provider for GitHub, an S3 bucket that will be used by CodeGuru, and an IAM role that will be assumed by your GitHub Action workflow:
+You can use [this CloudFormation template](template.yml) to create all the resources required to configure Amazon CodeGuru Reviewer with GitHub Actions:
+
+- An OpenID Connect (OIDC) Identity Provider for GitHub
+- An Amazon S3 bucket to upload code and build artifacts for CodeGuru Reviewer
+- An IAM role with access to the S3 bucket and AmazonCodeGuruReviewerFullAccess that can be assumed by GitHub's OIDC provider when running the CodeGuru GitHub Action workflow on your GitHub repo.
 
 [![Launch Stack](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?templateURL=https://anacunha.s3.amazonaws.com/codeguru-reviewer-github-actions-template.yml)
 
