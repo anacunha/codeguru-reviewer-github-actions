@@ -12,7 +12,7 @@ You can use [this CloudFormation template](template.yml) to create all the resou
 
 - An OpenID Connect (OIDC) Identity Provider for GitHub
 - An Amazon S3 bucket to upload code and build artifacts for CodeGuru Reviewer
-- An IAM role with access to the S3 bucket and AmazonCodeGuruReviewerFullAccess that can be assumed by GitHub's OIDC provider when running the CodeGuru GitHub Action workflow on your GitHub repo.
+- An IAM role with access to the S3 bucket and [`AmazonCodeGuruReviewerFullAccess`](https://docs.aws.amazon.com/codeguru/latest/reviewer-ug/auth-and-access-control-iam-identity-based-access-control.html#managed-full-access) that can be assumed by the CodeGuru Reviewer workflow on your GitHub repo.
 
 [![Launch Stack](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?templateURL=https://anacunha.s3.amazonaws.com/codeguru-reviewer-github-actions-template.yml)
 
