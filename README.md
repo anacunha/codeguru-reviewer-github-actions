@@ -8,7 +8,11 @@ Your [GitHub Action Workflow](https://docs.github.com/en/actions/learn-github-ac
 
 The recommended way to allow your workflow to access resources on your AWS account is through *short-lived credentials* using [OpenID Connect (OIDC)](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect).
 
-To configure GitHub's OIDC provider in AWS, follow these instructions:
+To configure GitHub's OIDC provider in AWS, you can use [this CloudFormation template](template.yml). It will create an OIDC Identity Provider for GitHub, an S3 bucket that will be used by CodeGuru, and an IAM role that will be assumed by your GitHub Action workflow:
+
+[![Launch Stack](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?templateURL=https://anacunha.s3.amazonaws.com/codeguru-reviewer-github-actions-template.yml)
+
+ If you prefer, you can also follow the instructions below:
 
 - [Create an OpenID Connect identity provider on AWS](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html)
 
