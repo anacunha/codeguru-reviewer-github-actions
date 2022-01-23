@@ -59,6 +59,62 @@ You can use [this CloudFormation template](template.yml) to create all the resou
             - [`s3:ListBucket`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html)
             - [`s3:GetObject`](https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html)
 
+## 2. Create workflow file
+
+Create you `workflow.yml` file inside `.github/workflows`:
+
+```yml
+name: CodeGuru Reviewer GitHub Actions Integration
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  CodeGuru-Reviewer-Actions:
+    runs-on: ubuntu-latest
+
+    permissions:
+      # Required to interact with GitHub's OIDC Token endpoint.
+      id-token: write
+      # Required for Checkout action.
+      contents: read
+      # Required for CodeQL action (upload SARIF files).
+      security-events: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        with:
+          # Required for CodeGuru Reviewer.
+          fetch-depth: 0 # Fetches all history for all branches and tags.
+      - name: Setup Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+      - name: Build with Maven
+        run: mvn --batch-mode --update-snapshots verify
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Amazon CodeGuru Reviewer
+        uses: aws-actions/codeguru-reviewer@v1.1
+        with:
+          # Build artifacts directory. Only required for Java repositories.
+          build_path: target
+          # S3 Bucket with "codeguru-reviewer-*" prefix. Required.
+          s3_bucket: ${{ secrets.AWS_CODEGURU_REVIEWER_S3_BUCKET }}
+      - name: Upload review results
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: codeguru-results.sarif.json
+```
+
 ## Resources
 
 - [Configuring OpenID Connect in Amazon Web Services](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services)  (GitHub Docs)
