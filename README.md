@@ -61,7 +61,7 @@ You can use [this CloudFormation template](template.yml) to create all the resou
 
 ## 2. Create workflow file
 
-Create you `workflow.yml` file inside `.github/workflows`:
+Create your `workflow.yml` file inside `.github/workflows`:
 
 ```yml
 name: CodeGuru Reviewer GitHub Actions Integration
