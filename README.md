@@ -121,7 +121,7 @@ jobs:
 
       # Upload results to GitHub
       - name: Upload review results
-        uses: github/codeql-action/upload-sarif@v1
+        uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: codeguru-results.sarif.json
 ```
