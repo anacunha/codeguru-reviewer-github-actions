@@ -1,0 +1,60 @@
+name: CodeGuru Reviewer GitHub Actions Integration
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  CodeGuruReviewer:
+    runs-on: ubuntu-latest
+
+    permissions:
+      # Required to interact with GitHub's OIDC Token endpoint
+      id-token: write
+      # Required for Checkout action
+      contents: read
+      # Required for CodeQL action (upload SARIF file)
+      security-events: write
+
+    steps:
+      # Checkout the repo
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        with:
+          # Required for CodeGuru Reviewer
+          fetch-depth: 0 # Fetches all history for all branches and tags
+
+      # Set up Java
+      - name: Setup Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      # Build source code with Maven
+      - name: Build with Maven
+        run: mvn --batch-mode --update-snapshots verify
+
+      # Configure AWS Credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # Add CodeGuru Reviewer Action
+      - name: Amazon CodeGuru Reviewer
+        uses: aws-actions/codeguru-reviewer@v1.1
+        with:
+          # Build artifacts directory. Only required for Java
+          build_path: target
+          # S3 Bucket with "codeguru-reviewer-" prefix
+          s3_bucket: ${{ secrets.AWS_CODEGURU_REVIEWER_S3_BUCKET }}
+
+      # Upload results to GitHub
+      - name: Upload review results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: codeguru-results.sarif.json
